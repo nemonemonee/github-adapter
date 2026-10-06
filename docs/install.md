@@ -9,13 +9,13 @@ See [release readiness](release-readiness.md) for validation and remaining check
 
 ## Get a test package
 
-1. Open [Test builds](https://github.com/nemonemonee/github-adapter/actions/workflows/verify.yml)
+1. Sign in to GitHub, open [Test builds](https://github.com/nemonemonee/github-adapter/actions/workflows/verify.yml)
    and choose a successful **Verify candidate** run.
 2. Under **Artifacts**, download the artifact for your platform:
    `windows-arm64-candidate`, `windows-x64-candidate`, `macos-arm64-candidate`
    or `macos-x64-candidate`.
-3. Extract the downloaded outer artifact ZIP. It contains the package ZIP and
-   matching `.zip.sha256` file used by the commands below.
+3. Extract the downloaded outer artifact ZIP and open its versioned package
+   folder. It contains the package ZIP and matching `.zip.sha256` file used below.
 
 These are CI preview artifacts. No GitHub Release assets are created at this step.
 

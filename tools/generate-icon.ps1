@@ -156,16 +156,34 @@ function Write-IcoDifferences([byte[]]$Canonical, [byte[]]$Generated) {
             $generatedFrame = Get-IcoFramePixels $Generated $index
             $mismatches = 0
             $maxDelta = 0
+            $alphaDifferences = 0
+            $maxAlphaDelta = 0
+            $visibleRgbDifferences = 0
+            $maxVisibleRgbDelta = 0
+            $transparentRgbDifferences = 0
+            $maxTransparentRgbDelta = 0
             for ($offset = 0; $offset -lt $canonicalFrame.Rgba.Length; $offset += 4) {
                 $different = $false
+                $rgbDifferent = $false
+                $visible = $canonicalFrame.Rgba[$offset + 3] -ne 0 -or $generatedFrame.Rgba[$offset + 3] -ne 0
                 foreach ($channel in 0..3) {
                     $delta = [Math]::Abs([int]$canonicalFrame.Rgba[$offset + $channel] - [int]$generatedFrame.Rgba[$offset + $channel])
                     if ($delta -ne 0) { $different = $true }
                     if ($delta -gt $maxDelta) { $maxDelta = $delta }
+                    if ($channel -eq 3) {
+                        if ($delta -ne 0) { $alphaDifferences++ }
+                        if ($delta -gt $maxAlphaDelta) { $maxAlphaDelta = $delta }
+                    } else {
+                        if ($delta -ne 0) { $rgbDifferent = $true }
+                        if ($visible -and $delta -gt $maxVisibleRgbDelta) { $maxVisibleRgbDelta = $delta }
+                        if (-not $visible -and $delta -gt $maxTransparentRgbDelta) { $maxTransparentRgbDelta = $delta }
+                    }
                 }
                 if ($different) { $mismatches++ }
+                if ($rgbDifferent -and $visible) { $visibleRgbDifferences++ }
+                if ($rgbDifferent -and -not $visible) { $transparentRgbDifferences++ }
             }
-            Write-Host "ICO frame $($sizes[$index])x$($sizes[$index]): canonical PNG bytes=$($canonicalFrame.EncodedLength), RGBA SHA256=$($canonicalFrame.Hash); generated PNG bytes=$($generatedFrame.EncodedLength), RGBA SHA256=$($generatedFrame.Hash); mismatched pixels=$mismatches; max channel delta=$maxDelta."
+            Write-Host "ICO frame $($sizes[$index])x$($sizes[$index]): canonical PNG bytes=$($canonicalFrame.EncodedLength), RGBA SHA256=$($canonicalFrame.Hash); generated PNG bytes=$($generatedFrame.EncodedLength), RGBA SHA256=$($generatedFrame.Hash); mismatched pixels=$mismatches; max channel delta=$maxDelta; alpha differences=$alphaDifferences/max=$maxAlphaDelta; RGB with either alpha nonzero=$visibleRgbDifferences/max=$maxVisibleRgbDelta; RGB with both alpha zero=$transparentRgbDifferences/max=$maxTransparentRgbDelta."
         }
     } catch {
         Write-Host "ICO mismatch diagnostics unavailable: $($_.Exception.Message)"
@@ -198,9 +216,15 @@ foreach ($output in $outputs) {
     $target = Join-Path $OutputDirectory $output.Name
     if ($Check) {
         if (-not [IO.File]::Exists($target) -or -not [Linq.Enumerable]::SequenceEqual([byte[]][IO.File]::ReadAllBytes($target), [byte[]]$output.Bytes)) {
-            if ([IO.File]::Exists($target)) {
-                Write-Host "ICO byte mismatch: $($output.Name)."
-                Write-IcoDifferences ([IO.File]::ReadAllBytes($target)) ([byte[]]$output.Bytes)
+            foreach ($diagnosticOutput in $outputs) {
+                $diagnosticTarget = Join-Path $OutputDirectory $diagnosticOutput.Name
+                if ([IO.File]::Exists($diagnosticTarget)) {
+                    $canonicalBytes = [IO.File]::ReadAllBytes($diagnosticTarget)
+                    if (-not [Linq.Enumerable]::SequenceEqual([byte[]]$canonicalBytes, [byte[]]$diagnosticOutput.Bytes)) {
+                        Write-Host "ICO byte mismatch: $($diagnosticOutput.Name)."
+                        Write-IcoDifferences $canonicalBytes ([byte[]]$diagnosticOutput.Bytes)
+                    }
+                }
             }
             throw "$($output.Name) is stale; run tools/generate-icon.ps1 before rebuilding both native executables."
         }

@@ -544,3 +544,4 @@ compile_error!("Controlled build flag fixture failure");
     }
     if (Test-Path -LiteralPath $fixture) { Remove-Item -LiteralPath $fixture -Recurse -Force }
 }
+exit 0
