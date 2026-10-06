@@ -11,6 +11,23 @@ Set-StrictMode -Version Latest
 
 if (-not $IsWindows) { throw 'Icon generation requires Windows and PowerShell 7.' }
 $root = Split-Path -Parent $PSScriptRoot
+if ($Check -and -not $PSBoundParameters.ContainsKey('SourcePng') -and -not $PSBoundParameters.ContainsKey('OutputDirectory')) {
+    # GDI+ exports vary across Windows platforms; shipped artwork is canonical.
+    $approved = @{
+        'github-adapter-dark.svg' = 'ea163aabdf420579775597f7f9bab6ae8c7d5f2b5198499f170612385fcd55c9'
+        'github-adapter-dark.png' = '275f82e1307100e637c37a7a64c91299feeb53b4ecfee39569889f8def731a3a'
+        'github-adapter-dark.ico' = 'e021b1c6f93d664337c35b322b6958626e952a0cbdbc603c1f24a8cf4cb1a011'
+        'github-adapter-tray.ico' = '450393974437ca34e1c8205c2404f81e5ab45716111ff433ceca2ce74805594b'
+    }
+    foreach ($name in $approved.Keys) {
+        $path = Join-Path $root "assets\$name"
+        if (-not [IO.File]::Exists($path) -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $approved[$name]) {
+            throw "$name is stale; approved canonical artwork digests must match before rebuilding native executables."
+        }
+    }
+    Write-Host 'Canonical artwork verified: approved SVG, PNG, application ICO and tray ICO SHA256.'
+    return
+}
 if (-not $SourcePng) { $SourcePng = Join-Path $root 'assets\github-adapter-dark.png' }
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root 'assets' }
 $SourcePng = [IO.Path]::GetFullPath($SourcePng)
@@ -108,88 +125,6 @@ function ConvertTo-IcoBytes([Drawing.Image]$Image) {
     }
 }
 
-function Get-IcoFramePixels([byte[]]$Bytes, [int]$Index) {
-    $entry = 6 + 16 * $Index
-    $length = [BitConverter]::ToUInt32($Bytes, $entry + 8)
-    $offset = [BitConverter]::ToUInt32($Bytes, $entry + 12)
-    if ($length -lt 33 -or $offset -gt $Bytes.Length -or $length -gt $Bytes.Length - $offset) {
-        throw "Invalid ICO frame $Index bounds."
-    }
-    $stream = [IO.MemoryStream]::new($Bytes, [int]$offset, [int]$length, $false)
-    $image = $null
-    try {
-        $image = [Drawing.Bitmap]::new($stream)
-        if ($image.Width -ne $sizes[$Index] -or $image.Height -ne $sizes[$Index]) {
-            throw "Invalid ICO frame $Index dimensions: $($image.Width)x$($image.Height)."
-        }
-        $rgba = [byte[]]::new(4 * $image.Width * $image.Height)
-        $next = 0
-        for ($row = 0; $row -lt $image.Height; $row++) {
-            for ($column = 0; $column -lt $image.Width; $column++) {
-                $pixel = $image.GetPixel($column, $row)
-                $rgba[$next++] = $pixel.R
-                $rgba[$next++] = $pixel.G
-                $rgba[$next++] = $pixel.B
-                $rgba[$next++] = $pixel.A
-            }
-        }
-        return [pscustomobject]@{
-            EncodedLength = $length
-            Rgba = $rgba
-            Hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($rgba))
-        }
-    } finally {
-        if ($image) { $image.Dispose() }
-        $stream.Dispose()
-    }
-}
-
-function Write-IcoDifferences([byte[]]$Canonical, [byte[]]$Generated) {
-    try {
-        foreach ($bytes in @($Canonical, $Generated)) {
-            if ($bytes.Length -lt 166 -or [BitConverter]::ToUInt16($bytes, 0) -ne 0 -or [BitConverter]::ToUInt16($bytes, 2) -ne 1 -or [BitConverter]::ToUInt16($bytes, 4) -ne $sizes.Count) {
-                throw 'Invalid ICO header; expected ten image frames.'
-            }
-        }
-        foreach ($index in 0..($sizes.Count - 1)) {
-            $canonicalFrame = Get-IcoFramePixels $Canonical $index
-            $generatedFrame = Get-IcoFramePixels $Generated $index
-            $mismatches = 0
-            $maxDelta = 0
-            $alphaDifferences = 0
-            $maxAlphaDelta = 0
-            $visibleRgbDifferences = 0
-            $maxVisibleRgbDelta = 0
-            $transparentRgbDifferences = 0
-            $maxTransparentRgbDelta = 0
-            for ($offset = 0; $offset -lt $canonicalFrame.Rgba.Length; $offset += 4) {
-                $different = $false
-                $rgbDifferent = $false
-                $visible = $canonicalFrame.Rgba[$offset + 3] -ne 0 -or $generatedFrame.Rgba[$offset + 3] -ne 0
-                foreach ($channel in 0..3) {
-                    $delta = [Math]::Abs([int]$canonicalFrame.Rgba[$offset + $channel] - [int]$generatedFrame.Rgba[$offset + $channel])
-                    if ($delta -ne 0) { $different = $true }
-                    if ($delta -gt $maxDelta) { $maxDelta = $delta }
-                    if ($channel -eq 3) {
-                        if ($delta -ne 0) { $alphaDifferences++ }
-                        if ($delta -gt $maxAlphaDelta) { $maxAlphaDelta = $delta }
-                    } else {
-                        if ($delta -ne 0) { $rgbDifferent = $true }
-                        if ($visible -and $delta -gt $maxVisibleRgbDelta) { $maxVisibleRgbDelta = $delta }
-                        if (-not $visible -and $delta -gt $maxTransparentRgbDelta) { $maxTransparentRgbDelta = $delta }
-                    }
-                }
-                if ($different) { $mismatches++ }
-                if ($rgbDifferent -and $visible) { $visibleRgbDifferences++ }
-                if ($rgbDifferent -and -not $visible) { $transparentRgbDifferences++ }
-            }
-            Write-Host "ICO frame $($sizes[$index])x$($sizes[$index]): canonical PNG bytes=$($canonicalFrame.EncodedLength), RGBA SHA256=$($canonicalFrame.Hash); generated PNG bytes=$($generatedFrame.EncodedLength), RGBA SHA256=$($generatedFrame.Hash); mismatched pixels=$mismatches; max channel delta=$maxDelta; alpha differences=$alphaDifferences/max=$maxAlphaDelta; RGB with either alpha nonzero=$visibleRgbDifferences/max=$maxVisibleRgbDelta; RGB with both alpha zero=$transparentRgbDifferences/max=$maxTransparentRgbDelta."
-        }
-    } catch {
-        Write-Host "ICO mismatch diagnostics unavailable: $($_.Exception.Message)"
-    }
-}
-
 $sourceBytes = [IO.File]::ReadAllBytes($SourcePng)
 if ($sourceBytes.Length -lt 33 -or [Convert]::ToHexString($sourceBytes[0..7]) -cne '89504E470D0A1A0A' -or [Convert]::ToHexString($sourceBytes[12..15]) -cne '49484452' -or $sourceBytes[24] -ne 8 -or $sourceBytes[25] -ne 6) {
     throw 'Source must be a valid 1024x1024 PNG with 8-bit RGBA channels.'
@@ -216,16 +151,6 @@ foreach ($output in $outputs) {
     $target = Join-Path $OutputDirectory $output.Name
     if ($Check) {
         if (-not [IO.File]::Exists($target) -or -not [Linq.Enumerable]::SequenceEqual([byte[]][IO.File]::ReadAllBytes($target), [byte[]]$output.Bytes)) {
-            foreach ($diagnosticOutput in $outputs) {
-                $diagnosticTarget = Join-Path $OutputDirectory $diagnosticOutput.Name
-                if ([IO.File]::Exists($diagnosticTarget)) {
-                    $canonicalBytes = [IO.File]::ReadAllBytes($diagnosticTarget)
-                    if (-not [Linq.Enumerable]::SequenceEqual([byte[]]$canonicalBytes, [byte[]]$diagnosticOutput.Bytes)) {
-                        Write-Host "ICO byte mismatch: $($diagnosticOutput.Name)."
-                        Write-IcoDifferences $canonicalBytes ([byte[]]$diagnosticOutput.Bytes)
-                    }
-                }
-            }
             throw "$($output.Name) is stale; run tools/generate-icon.ps1 before rebuilding both native executables."
         }
     } else {
@@ -234,4 +159,4 @@ foreach ($output in $outputs) {
     }
 }
 
-if ($Check) { Write-Host 'The application and tray icons match the current Windows .NET export.' }
+if ($Check) { Write-Host 'Generated icons match this Windows .NET export.' }

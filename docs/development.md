@@ -78,7 +78,14 @@ Mac uses `app.icns` and a monochrome template PNG.
 .\tools\tests\test-icons.ps1
 ```
 
-After changing artwork, regenerate platform assets and rebuild both executables.
+The default icon check verifies exact hashes of the approved source and ICOs.
+Windows GDI+ can resample pixels differently across systems, so packages use the
+committed exports. Fixture checks with explicit source or output paths compare
+regeneration on the same machine.
+
+After changing artwork, regenerate platform assets, review the exports, update
+the approved hashes in the icon and native qualification tools, and rebuild both
+executables.
 
 ## Maintenance checks
 

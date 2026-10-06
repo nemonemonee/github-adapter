@@ -56,7 +56,7 @@ commands, or add its directory to your user PATH yourself.
 ## macOS
 
 Requirements: macOS 13 or later, Apple Silicon or Intel, and Codex installed.
-Native macOS qualification is still pending for this candidate.
+This preview still needs desktop and live-client testing on a receiving Mac.
 
 Choose `arm64` for Apple Silicon or `x64` for Intel. Verify the downloaded ZIP:
 

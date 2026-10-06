@@ -86,6 +86,34 @@ function Assert-Frames([string]$Path, [Drawing.Bitmap]$Expected = $null) {
 try {
     $assetsBefore = Get-Hashes (Join-Path $root 'assets')
     [IO.Directory]::CreateDirectory($temporary) | Out-Null
+    foreach ($name in @('github-adapter-dark.ico', 'github-adapter-tray.ico')) {
+        Assert-Frames (Join-Path $root "assets\$name")
+    }
+    $canonicalRoot = Join-Path $temporary 'canonical'
+    $canonicalAssets = Join-Path $canonicalRoot 'assets'
+    $canonicalTools = Join-Path $canonicalRoot 'tools'
+    [IO.Directory]::CreateDirectory($canonicalAssets) | Out-Null
+    [IO.Directory]::CreateDirectory($canonicalTools) | Out-Null
+    $canonicalRenderer = Join-Path $canonicalTools 'generate-icon.ps1'
+    [IO.File]::Copy($renderer, $canonicalRenderer)
+    $canonicalNames = @('github-adapter-dark.svg', 'github-adapter-dark.png', 'github-adapter-dark.ico', 'github-adapter-tray.ico')
+    foreach ($name in $canonicalNames) {
+        [IO.File]::Copy((Join-Path $root "assets\$name"), (Join-Path $canonicalAssets $name))
+    }
+    $beforeCanonicalCheck = Get-Hashes $canonicalRoot
+    & $canonicalRenderer -Check | Out-Null
+    Assert-True ($beforeCanonicalCheck -eq (Get-Hashes $canonicalRoot)) 'Canonical check changed approved fixture files or timestamps.'
+    foreach ($name in $canonicalNames) {
+        $path = Join-Path $canonicalAssets $name
+        $original = [IO.File]::ReadAllBytes($path)
+        $changed = [byte[]]$original.Clone()
+        $changed[$changed.Length - 1] = $changed[$changed.Length - 1] -bxor 1
+        [IO.File]::WriteAllBytes($path, $changed)
+        $beforeCanonicalCheck = Get-Hashes $canonicalRoot
+        Assert-Fails { & $canonicalRenderer -Check } "*$name is stale*"
+        Assert-True ($beforeCanonicalCheck -eq (Get-Hashes $canonicalRoot)) "Canonical check modified rejected $name or fixture timestamps."
+        [IO.File]::WriteAllBytes($path, $original)
+    }
     $source = Join-Path $temporary 'source.png'
     $output = Join-Path $temporary 'out'
     [IO.Directory]::CreateDirectory($output) | Out-Null
