@@ -4,7 +4,7 @@
 Repository: [`nemonemonee/github-adapter`](https://github.com/nemonemonee/github-adapter).
 
 This preview adds native macOS integration, current CCDX compatibility updates,
-original artwork, licensing, product documentation and a four-platform CI matrix.
+the approved Black Cat Cut-out icon, licensing, product documentation and a four-platform CI matrix.
 
 ## Evidence
 

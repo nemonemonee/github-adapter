@@ -14,10 +14,10 @@ $root = Split-Path -Parent $PSScriptRoot
 if ($Check -and -not $PSBoundParameters.ContainsKey('SourcePng') -and -not $PSBoundParameters.ContainsKey('OutputDirectory')) {
     # GDI+ exports vary across Windows platforms; shipped artwork is canonical.
     $approved = @{
-        'github-adapter-dark.svg' = 'ea163aabdf420579775597f7f9bab6ae8c7d5f2b5198499f170612385fcd55c9'
-        'github-adapter-dark.png' = '275f82e1307100e637c37a7a64c91299feeb53b4ecfee39569889f8def731a3a'
-        'github-adapter-dark.ico' = 'e021b1c6f93d664337c35b322b6958626e952a0cbdbc603c1f24a8cf4cb1a011'
-        'github-adapter-tray.ico' = '450393974437ca34e1c8205c2404f81e5ab45716111ff433ceca2ce74805594b'
+        'github-adapter-dark.svg' = '3887401cd33bade36cff2b4c806f88385ec2f736ac3941eeeb8ba03c3b9c59f8'
+        'github-adapter-dark.png' = 'a61247a2f4d31c58dac6821d1d10930f887faa461b1cf645a9450152bb2b08f8'
+        'github-adapter-dark.ico' = 'f16b821051b0cb3bfe00d59fb58da8ec73a64f9fe0658a99184cdc1679c7e57a'
+        'github-adapter-tray.ico' = 'd3e2a8955bff10f070e2aec64cea9c468c4736cba381f0f7ecdafb87ccba2a10'
     }
     foreach ($name in $approved.Keys) {
         $path = Join-Path $root "assets\$name"

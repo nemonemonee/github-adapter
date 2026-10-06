@@ -69,7 +69,7 @@ hashes, versions, architecture, subsystems and embedded artwork.
 
 ## Artwork
 
-The original connector mark lives in `assets/github-adapter-dark.svg` with its
+The approved Black Cat Cut-out icon lives in `assets/github-adapter-dark.svg` with its
 1024-pixel RGBA PNG. Windows resources use generated application/tray ICOs;
 Mac uses `app.icns` and a monochrome template PNG.
 

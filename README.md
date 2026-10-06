@@ -70,4 +70,5 @@ protocols and limits, including buffered Claude streaming.
 Protocol research and upstream references are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 GitHub Adapter is an independent project. It is not affiliated with GitHub,
-OpenAI or Anthropic. The connector icon is original project artwork.
+OpenAI or Anthropic. The icon combines GitHub and OpenAI brand marks, which
+remain the property of their respective owners. See the [artwork notice](THIRD_PARTY_NOTICES.md#artwork).

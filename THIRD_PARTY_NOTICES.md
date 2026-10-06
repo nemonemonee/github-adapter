@@ -1,8 +1,15 @@
 # Third-party notices
 
-GitHub Adapter's Rust implementation and original connector artwork are provided
-under the [MIT license](LICENSE). Rust dependency license texts and package
+GitHub Adapter's Rust implementation is provided under the [MIT license](LICENSE).
+Rust dependency license texts and package
 versions are included in [THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES.txt).
+
+## Artwork
+
+The Black Cat Cut-out icon combines GitHub's Octocat and OpenAI's Blossom marks.
+These marks remain the property of GitHub and OpenAI; the project's MIT license
+does not grant rights to them. Their published brand guidelines are available
+from [GitHub](https://brand.github.com/foundations/logo) and [OpenAI](https://openai.com/brand/).
 
 ## Protocol and interoperability references
 

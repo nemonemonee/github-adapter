@@ -104,8 +104,8 @@ try {
         [IO.File]::Copy((Join-Path (Split-Path -Parent $Source) $name), (Join-Path $fixture "input\$name"))
     }
     $approvedSources = @{
-        svg = 'ea163aabdf420579775597f7f9bab6ae8c7d5f2b5198499f170612385fcd55c9'
-        png = '275f82e1307100e637c37a7a64c91299feeb53b4ecfee39569889f8def731a3a'
+        svg = '3887401cd33bade36cff2b4c806f88385ec2f736ac3941eeeb8ba03c3b9c59f8'
+        png = 'a61247a2f4d31c58dac6821d1d10930f887faa461b1cf645a9450152bb2b08f8'
     }
     foreach ($extension in $approvedSources.Keys) {
         Assert-Check ((Get-SHA256 (Join-Path $root "assets\github-adapter-dark.$extension")) -ceq $approvedSources[$extension]) "approved $extension source unchanged; changed artwork requires reapproval, ICO regeneration and native rebuild"
