@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 #[allow(dead_code)]
-#[path = "..\\src\\test_support.rs"]
+#[path = "../src/test_support.rs"]
 mod support;
 
 use support::{CacheFile, Fixture, Reply, response};

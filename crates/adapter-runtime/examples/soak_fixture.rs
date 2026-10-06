@@ -1,13 +1,13 @@
 //! Bounded, offline release evidence, not a replacement runtime or a throughput benchmark.
 
-#[path = "soak_support\\fixture.rs"]
+#[path = "soak_support/fixture.rs"]
 mod fixture;
-#[path = "soak_support\\platform.rs"]
+#[path = "soak_support/platform.rs"]
 mod platform;
-#[path = "soak_support\\report.rs"]
+#[path = "soak_support/report.rs"]
 mod report;
 #[allow(dead_code)]
-#[path = "..\\src\\test_support.rs"]
+#[path = "../src/test_support.rs"]
 mod support;
 
 use fixture::Fixture;
