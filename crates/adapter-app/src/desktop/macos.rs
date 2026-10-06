@@ -95,6 +95,12 @@ fn verified(path: &Path, bundle_id: &str) -> Result<bool> {
     let requirement = format!(
         "anchor apple generic and identifier \"{bundle_id}\" and certificate leaf[subject.OU] = \"{OPENAI_TEAM}\""
     );
+    signature_matches(path, &requirement)
+}
+
+fn signature_matches(path: &Path, expression: &str) -> Result<bool> {
+    // Without '=', codesign interprets -R's value as a requirements file path.
+    let requirement = format!("={expression}");
     let (valid, _) = operation(
         "/usr/bin/codesign",
         &[
@@ -197,6 +203,37 @@ pub(super) fn launch(app: &DesktopApp) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn signed_system_code_accepts_inline_requirement() {
+        assert!(
+            signature_matches(
+                Path::new("/usr/bin/true"),
+                "anchor apple and identifier \"com.apple.true\"",
+            )
+            .unwrap()
+        );
+    }
+
+    #[test]
+    fn signed_system_code_rejects_wrong_identifier() {
+        assert!(
+            !signature_matches(
+                Path::new("/usr/bin/true"),
+                "anchor apple and identifier \"com.openai.codex\"",
+            )
+            .unwrap()
+        );
+    }
+
+    #[test]
+    fn signed_system_code_rejects_wrong_signer() {
+        let requirement = format!(
+            "anchor apple and identifier \"com.apple.true\" and certificate leaf[subject.OU] = \"{OPENAI_TEAM}\""
+        );
+        assert!(!signature_matches(Path::new("/usr/bin/true"), &requirement).unwrap());
+    }
+
     #[test]
     fn unsigned_same_id_bundle_is_not_an_official_app() {
         let root = tempfile::tempdir().unwrap();
@@ -204,5 +241,36 @@ mod tests {
         std::fs::create_dir_all(bundle.join("Contents")).unwrap();
         std::fs::write(bundle.join("Contents/Info.plist"), b"<?xml version=\"1.0\"?><plist version=\"1.0\"><dict><key>CFBundleIdentifier</key><string>com.openai.codex</string></dict></plist>").unwrap();
         assert!(!verified(&bundle, "com.openai.codex").unwrap());
+    }
+
+    #[test]
+    #[ignore = "Read-only receiving-Mac check; set ADAPTER_TEST_CODEX_BUNDLE to the installed official app."]
+    fn installed_codex_bundle_passes_verification_and_discovery() {
+        let path = PathBuf::from(
+            std::env::var_os("ADAPTER_TEST_CODEX_BUNDLE")
+                .expect("Set ADAPTER_TEST_CODEX_BUNDLE to the installed official Codex app."),
+        );
+        assert!(path.is_absolute(), "Use the absolute installed app path.");
+        let path = std::fs::canonicalize(path).unwrap();
+        assert!(verified(&path, "com.openai.codex").unwrap());
+        assert!(!verified(&path, "com.openai.chat").unwrap());
+        assert!(
+            !signature_matches(
+                &path,
+                "anchor apple generic and identifier \"com.openai.codex\" and certificate leaf[subject.OU] = \"0000000000\"",
+            )
+            .unwrap()
+        );
+        let apps = discover().unwrap();
+        assert!(apps.contains(&DesktopApp {
+            name: "codex".into(),
+            target: "com.openai.codex".into(),
+        }));
+        if path.file_name() == Some(OsStr::new("ChatGPT.app")) {
+            assert!(apps.contains(&DesktopApp {
+                name: "chatgpt".into(),
+                target: "com.openai.codex".into(),
+            }));
+        }
     }
 }

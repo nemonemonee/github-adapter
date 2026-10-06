@@ -25,7 +25,8 @@ the approved Black Cat Cut-out icon, licensing, product documentation and a four
 Native macOS CI compiles, links, tests and verifies packages on
 [Apple Silicon](https://github.com/nemonemonee/github-adapter/actions/runs/37416581273/job/112116412852)
 and [Intel](https://github.com/nemonemonee/github-adapter/actions/runs/37416581273/job/112116413376).
-The ignored Mac test is an opt-in Keychain round trip that still needs a receiving Mac.
+These CI results predate the macOS discovery regression coverage. The Keychain
+round trip and installed-Codex verification are opt-in receiving-Mac checks.
 [Test builds](https://github.com/nemonemonee/github-adapter/actions/workflows/verify.yml)
 provide preview packages after successful runs.
 
@@ -49,15 +50,30 @@ before qualification. Discovery rejects a different signer. References:
 [OpenAI app association](https://openai.com/.well-known/apple-app-site-association).
 
 On the receiving Mac, inspect the installed Codex bundle's `Identifier` and
-`TeamIdentifier`:
+`TeamIdentifier`, then verify its complete signature against the official identity:
 
 ```sh
-codesign --display --verbose=4 "/Applications/Codex.app" 2>&1
+codex_bundle="/Applications/ChatGPT.app"
+plutil -extract CFBundleIdentifier raw -o - "$codex_bundle/Contents/Info.plist"
+codesign --display --verbose=4 "$codex_bundle" 2>&1
+codesign --verify --deep --strict \
+  -R '=anchor apple generic and identifier "com.openai.codex" and certificate leaf[subject.OU] = "2DC432GLL2"' \
+  "$codex_bundle"
+"/Applications/GitHub Adapter.app/Contents/MacOS/github-adapter" apps
 ```
 
-Use its actual installed path; the unified app may be named `ChatGPT.app`.
-Open GitHub Adapter from Finder and verify its menu, visible startup errors and
-Quit restoration. CI builds and package checks do not exercise that interaction.
+Use its actual installed path, including `Codex.app` or `~/Applications` if
+applicable; the unified app may be named `ChatGPT.app`. Expect bundle ID and
+signature `Identifier` `com.openai.codex`, team `2DC432GLL2`, and verification exit
+status 0. The leading `=` makes `-R` an inline requirement, not a filename.
+`apps` should report `codex` targeting `com.openai.codex`; a verified `ChatGPT.app`
+also supplies a `chatgpt` alias targeting the same identity. The optional
+[installed-bundle regression](development.md) checks this without activation.
+
+Open GitHub Adapter from Finder and verify its menu, visible startup errors,
+Open Codex activation of that same app, and Quit restoration. Discovery and launch
+both recheck the official bundle/signature; no paid request is needed for these
+desktop checks. CI builds and package checks do not exercise that interaction.
 
 Automated tests use synthetic providers. Live Copilot access and desktop/client
 behavior still need the checks above; soak tests alone do not qualify a release.

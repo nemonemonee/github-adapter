@@ -96,10 +96,29 @@ package is blocked on a managed computer, use its approved software process.
 2. If images are enabled, close Codex so its image helper releases the executable.
 3. Verify the new package.
 4. On Windows, run the new bundled installer. On Mac, replace the complete app bundle.
-5. Open GitHub Adapter and check `--version` and the selected account/model.
+5. Check `--version` and saved-account access with `account`, then open GitHub
+   Adapter and verify the selected account/model.
 
 Saved sign-in and original settings backups remain in their existing namespaces.
 Use `logout` before changing to another GitHub account.
+
+Unsigned/ad-hoc macOS rebuilds can change the executable signature and require
+user Keychain reapproval even though the saved sign-in is preserved. Before
+starting the updated app, run:
+
+```sh
+"/Applications/GitHub Adapter.app/Contents/MacOS/github-adapter" account
+```
+
+Review the normal macOS prompt for the verified app. If it asks for the login
+Keychain password, enter it only in that operating-system dialog. Do not bypass
+the prompt or delete the saved sign-in to avoid it; startup must wait for user
+authorization. See [credential troubleshooting](troubleshooting.md).
+
+If native network access requires an already-configured proxy, pass its
+`HTTPS_PROXY`/`HTTP_PROXY` values explicitly when checking models and starting
+the host, keeping loopback in `NO_PROXY`. Finder does not inherit Terminal
+environment variables. See the [proxy example](troubleshooting.md).
 
 ## Remove
 
