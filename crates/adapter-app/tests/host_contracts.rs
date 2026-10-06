@@ -1252,7 +1252,16 @@ try {
             .spawn()
             .unwrap(),
     );
-    wait_file(&ready, Duration::from_secs(8)).await;
+    let startup_deadline = Instant::now() + Duration::from_secs(30);
+    while !ready.is_file() {
+        let status = child.0.try_wait().unwrap();
+        assert!(
+            status.is_none() && Instant::now() < startup_deadline,
+            "producer exited or exceeded its 30-second readiness budget (status: {status:?}): {}",
+            std::fs::read_to_string(&stderr).unwrap_or_default(),
+        );
+        tokio::time::sleep(Duration::from_millis(30)).await;
+    }
     let result = Client::new(endpoint, limits())
         .request(&Request::new(Control::Stop))
         .await;

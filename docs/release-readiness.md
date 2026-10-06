@@ -15,18 +15,18 @@ the approved Black Cat Cut-out icon, licensing, product documentation and a four
 | Rust formatting | Passed |
 | Product documentation links | 12 Markdown files verified |
 | Locked dependency notices | Verified |
-| Windows icon contracts | 559 assertions passed on ARM64; approved hashes and frame structure verified |
+| Windows icon contracts | 559 assertions passed on each architecture |
 | Windows release binaries | ARM64 and x64 built with static CRT |
-| Windows installer/archive contracts | 109 passed, 0 failed on native ARM64 |
-| Native macOS Apple Silicon and Intel workspace tests | 318 passed, 0 failed, 1 ignored on each architecture |
+| Windows installer/archive contracts | 109 passed, 0 failed on each architecture |
+| Native macOS Apple Silicon and Intel workspace tests | 321 passed, 0 failed, 2 ignored on each architecture |
 | Native macOS Apple Silicon and Intel strict Clippy | Passed |
 | Native macOS release bundles | Both architectures built; ad-hoc signatures and extracted packages verified |
 
 Native macOS CI compiles, links, tests and verifies packages on
-[Apple Silicon](https://github.com/nemonemonee/github-adapter/actions/runs/37416581273/job/112116412852)
-and [Intel](https://github.com/nemonemonee/github-adapter/actions/runs/37416581273/job/112116413376).
-These CI results predate the macOS discovery regression coverage. The Keychain
-round trip and installed-Codex verification are opt-in receiving-Mac checks.
+[Apple Silicon](https://github.com/nemonemonee/github-adapter/actions/runs/37508493361/job/112423172225)
+and [Intel](https://github.com/nemonemonee/github-adapter/actions/runs/37508493361/job/112423171995),
+including the discovery signature regressions. The two ignored checks cover a
+Keychain round trip and verification of an installed Codex app on a receiving Mac.
 [Test builds](https://github.com/nemonemonee/github-adapter/actions/workflows/verify.yml)
 provide preview packages after successful runs.
 

@@ -46,11 +46,8 @@ The package script verifies the app bundle, architecture, version and archive.
 The minimum is macOS 13 (`MACOSX_DEPLOYMENT_TARGET=13.0`). Cross-builds still need
 native execution on the target architecture.
 
-The default macOS discovery regressions use the signed system `/usr/bin/true`
-fixture to check inline requirement acceptance and wrong identifier/signer
-rejection, plus an unsigned same-ID app fixture. They do not alter system files
-or any installed app. A separate read-only receiving-Mac check verifies the actual
-official Codex bundle, rejects a wrong bundle ID/signing team, and checks discovery:
+The macOS tests cover signature acceptance, wrong identity/signer rejection and
+unsigned bundles. To verify discovery of an installed official Codex app:
 
 ```sh
 ADAPTER_TEST_CODEX_BUNDLE="/Applications/ChatGPT.app" \
@@ -59,9 +56,8 @@ ADAPTER_TEST_CODEX_BUNDLE="/Applications/ChatGPT.app" \
   -- --ignored --exact
 ```
 
-Use the actual installed path (`Codex.app` or the unified `ChatGPT.app`). This
-explicit opt-in does not launch apps, sign files, change client settings, access
-credentials or send inference requests. See [receiving-Mac validation](release-readiness.md).
+Use the actual installed path (`Codex.app` or `ChatGPT.app`). This opt-in check is
+read-only; see [receiving-Mac validation](release-readiness.md).
 
 Use `bash tools/package-macos.sh --identity 'Developer ID Application: ...'`
 for a Developer ID signed candidate. With an existing notarytool keychain profile,

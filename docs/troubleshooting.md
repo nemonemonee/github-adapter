@@ -39,11 +39,8 @@ The unified Codex app can be installed as `/Applications/ChatGPT.app` (or under
 its identity; discovery already checks both `Codex.app` and `ChatGPT.app`. Do not
 rename or reinstall a valid app just to match the filename.
 
-Follow the read-only [receiving-Mac checks](release-readiness.md) to verify the
-actual path and OpenAI signer. A `codesign -R` inline expression must begin with
-`=`; without it, `codesign` treats the expression as a filename and reports
-`invalid requirement specification`, rejecting even a correctly signed app.
-Use a build containing the corrected verifier rather than disabling verification.
+Use the latest successful test build. Follow the
+[receiving-Mac checks](release-readiness.md) to verify the installed app and signer.
 
 ## Settings changed while the adapter was running
 
@@ -68,36 +65,28 @@ Unlock the macOS login Keychain or check access to Windows Credential Manager.
 Use `account` to verify the selected login. Stop before `logout` and a new `login`.
 The adapter does not fall back to a plaintext token file.
 
-After an unsigned/ad-hoc macOS rebuild, the saved credential can remain intact
-while the new executable needs Keychain reapproval. Run the installed CLI's
-`account` command and review the normal macOS access prompt; the command may wait
-until it is answered. The prompt may identify `github-adapter` and the existing
-`MAI Adapter` credential service. If it requests the login Keychain password, the
-user must enter it only in that operating-system dialog, not in Terminal or chat.
-If the user cannot authorize access, leave the adapter stopped. Do not bypass
-Keychain protection, change access rules, or substitute another tool's token.
+After an unsigned macOS update, run `account` to approve the new executable's
+access to the saved sign-in before starting the app. Keychain may identify
+`github-adapter` and the legacy `MAI Adapter` credential service. Enter any login
+Keychain password in the macOS dialog. If access is denied, leave the app stopped
+until you can authorize it.
 
 ## Native requests fail behind a proxy
 
-A working browser or GitHub CLI connection does not prove the adapter's native
-requests use the same proxy. If direct access fails despite an already-configured
-system proxy, pass that proxy explicitly to the adapter process. For example,
-with an existing HTTP/HTTPS proxy listening at `127.0.0.1:7897`:
+If the adapter cannot connect through your configured proxy, pass its HTTP
+endpoint explicitly. Replace `http://127.0.0.1:8080` with your proxy's address:
 
 ```sh
-HTTPS_PROXY="http://127.0.0.1:7897" \
-HTTP_PROXY="http://127.0.0.1:7897" \
+HTTPS_PROXY="http://127.0.0.1:8080" \
+HTTP_PROXY="http://127.0.0.1:8080" \
 NO_PROXY="${NO_PROXY:+$NO_PROXY,}localhost,127.0.0.1,::1" \
   "/Applications/GitHub Adapter.app/Contents/MacOS/github-adapter" models --provider github
 ```
 
-Use your proxy's actual HTTP endpoint; do not assume an HTTP proxy port is a
-SOCKS endpoint. Keep loopback traffic outside the proxy so local adapter/client
-connections remain direct. After saved-account access succeeds, use the same
-per-command environment with `start` instead of `models --provider github` to
-launch a new host. Finder does not inherit these Terminal variables. This does
-not install a proxy or change system settings; preserve existing state-directory
-overrides such as `XDG_STATE_HOME`.
+`NO_PROXY` keeps local adapter/client connections direct. Quit any running adapter,
+then use the same environment with `start` instead of `models --provider github`.
+Finder does not inherit Terminal variables. Keep any existing state-directory
+overrides such as `XDG_STATE_HOME` when running these commands.
 
 ## A stream ends or a request fails
 

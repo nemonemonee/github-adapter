@@ -102,23 +102,17 @@ package is blocked on a managed computer, use its approved software process.
 Saved sign-in and original settings backups remain in their existing namespaces.
 Use `logout` before changing to another GitHub account.
 
-Unsigned/ad-hoc macOS rebuilds can change the executable signature and require
-user Keychain reapproval even though the saved sign-in is preserved. Before
-starting the updated app, run:
+After replacing an unsigned macOS bundle, Keychain may ask you to approve access
+to the saved sign-in again. Before starting the updated app, run:
 
 ```sh
 "/Applications/GitHub Adapter.app/Contents/MacOS/github-adapter" account
 ```
 
-Review the normal macOS prompt for the verified app. If it asks for the login
-Keychain password, enter it only in that operating-system dialog. Do not bypass
-the prompt or delete the saved sign-in to avoid it; startup must wait for user
-authorization. See [credential troubleshooting](troubleshooting.md).
+Answer the macOS Keychain prompt before starting the app. See
+[credential troubleshooting](troubleshooting.md) if access fails.
 
-If native network access requires an already-configured proxy, pass its
-`HTTPS_PROXY`/`HTTP_PROXY` values explicitly when checking models and starting
-the host, keeping loopback in `NO_PROXY`. Finder does not inherit Terminal
-environment variables. See the [proxy example](troubleshooting.md).
+If your connection needs a proxy, follow the [proxy instructions](troubleshooting.md).
 
 ## Remove
 
