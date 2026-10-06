@@ -167,7 +167,7 @@ fn desktop_implementation_has_no_shell_cli_or_installation_fallback() {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 #[test]
 fn desktop_non_windows_operations_report_unsupported_without_substituting_a_cli() {
     assert_eq!(adapter_app::desktop::discover().unwrap_err().status, 501);

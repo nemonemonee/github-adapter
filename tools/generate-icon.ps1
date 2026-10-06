@@ -108,6 +108,70 @@ function ConvertTo-IcoBytes([Drawing.Image]$Image) {
     }
 }
 
+function Get-IcoFramePixels([byte[]]$Bytes, [int]$Index) {
+    $entry = 6 + 16 * $Index
+    $length = [BitConverter]::ToUInt32($Bytes, $entry + 8)
+    $offset = [BitConverter]::ToUInt32($Bytes, $entry + 12)
+    if ($length -lt 33 -or $offset -gt $Bytes.Length -or $length -gt $Bytes.Length - $offset) {
+        throw "Invalid ICO frame $Index bounds."
+    }
+    $stream = [IO.MemoryStream]::new($Bytes, [int]$offset, [int]$length, $false)
+    $image = $null
+    try {
+        $image = [Drawing.Bitmap]::new($stream)
+        if ($image.Width -ne $sizes[$Index] -or $image.Height -ne $sizes[$Index]) {
+            throw "Invalid ICO frame $Index dimensions: $($image.Width)x$($image.Height)."
+        }
+        $rgba = [byte[]]::new(4 * $image.Width * $image.Height)
+        $next = 0
+        for ($row = 0; $row -lt $image.Height; $row++) {
+            for ($column = 0; $column -lt $image.Width; $column++) {
+                $pixel = $image.GetPixel($column, $row)
+                $rgba[$next++] = $pixel.R
+                $rgba[$next++] = $pixel.G
+                $rgba[$next++] = $pixel.B
+                $rgba[$next++] = $pixel.A
+            }
+        }
+        return [pscustomobject]@{
+            EncodedLength = $length
+            Rgba = $rgba
+            Hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($rgba))
+        }
+    } finally {
+        if ($image) { $image.Dispose() }
+        $stream.Dispose()
+    }
+}
+
+function Write-IcoDifferences([byte[]]$Canonical, [byte[]]$Generated) {
+    try {
+        foreach ($bytes in @($Canonical, $Generated)) {
+            if ($bytes.Length -lt 166 -or [BitConverter]::ToUInt16($bytes, 0) -ne 0 -or [BitConverter]::ToUInt16($bytes, 2) -ne 1 -or [BitConverter]::ToUInt16($bytes, 4) -ne $sizes.Count) {
+                throw 'Invalid ICO header; expected ten image frames.'
+            }
+        }
+        foreach ($index in 0..($sizes.Count - 1)) {
+            $canonicalFrame = Get-IcoFramePixels $Canonical $index
+            $generatedFrame = Get-IcoFramePixels $Generated $index
+            $mismatches = 0
+            $maxDelta = 0
+            for ($offset = 0; $offset -lt $canonicalFrame.Rgba.Length; $offset += 4) {
+                $different = $false
+                foreach ($channel in 0..3) {
+                    $delta = [Math]::Abs([int]$canonicalFrame.Rgba[$offset + $channel] - [int]$generatedFrame.Rgba[$offset + $channel])
+                    if ($delta -ne 0) { $different = $true }
+                    if ($delta -gt $maxDelta) { $maxDelta = $delta }
+                }
+                if ($different) { $mismatches++ }
+            }
+            Write-Host "ICO frame $($sizes[$index])x$($sizes[$index]): canonical PNG bytes=$($canonicalFrame.EncodedLength), RGBA SHA256=$($canonicalFrame.Hash); generated PNG bytes=$($generatedFrame.EncodedLength), RGBA SHA256=$($generatedFrame.Hash); mismatched pixels=$mismatches; max channel delta=$maxDelta."
+        }
+    } catch {
+        Write-Host "ICO mismatch diagnostics unavailable: $($_.Exception.Message)"
+    }
+}
+
 $sourceBytes = [IO.File]::ReadAllBytes($SourcePng)
 if ($sourceBytes.Length -lt 33 -or [Convert]::ToHexString($sourceBytes[0..7]) -cne '89504E470D0A1A0A' -or [Convert]::ToHexString($sourceBytes[12..15]) -cne '49484452' -or $sourceBytes[24] -ne 8 -or $sourceBytes[25] -ne 6) {
     throw 'Source must be a valid 1024x1024 PNG with 8-bit RGBA channels.'
@@ -134,6 +198,10 @@ foreach ($output in $outputs) {
     $target = Join-Path $OutputDirectory $output.Name
     if ($Check) {
         if (-not [IO.File]::Exists($target) -or -not [Linq.Enumerable]::SequenceEqual([byte[]][IO.File]::ReadAllBytes($target), [byte[]]$output.Bytes)) {
+            if ([IO.File]::Exists($target)) {
+                Write-Host "ICO byte mismatch: $($output.Name)."
+                Write-IcoDifferences ([IO.File]::ReadAllBytes($target)) ([byte[]]$output.Bytes)
+            }
             throw "$($output.Name) is stale; run tools/generate-icon.ps1 before rebuilding both native executables."
         }
     } else {

@@ -111,6 +111,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn a_stopped_listener_can_restart_after_orderly_server_first_close() {
+        use socket2::SockRef;
         use std::io::Read;
         use std::net::{Shutdown, TcpStream};
         use std::time::Duration;
@@ -119,8 +120,16 @@ mod tests {
         for address in ["127.0.0.1:0", "[::1]:0"] {
             let first = bind_loopback(address.parse().unwrap()).unwrap();
             let address = first.local_addr().unwrap();
+            assert!(
+                SockRef::from(&first).reuse_address().unwrap(),
+                "Address reuse is disabled on listener {address}"
+            );
             let mut client = TcpStream::connect_timeout(&address, timeout).unwrap();
             let (mut accepted, _) = first.accept().unwrap();
+            assert!(
+                SockRef::from(&accepted).reuse_address().unwrap(),
+                "Address reuse is disabled on accepted socket {address}"
+            );
             accepted.set_nonblocking(false).unwrap();
             client.set_read_timeout(Some(timeout)).unwrap();
             accepted.set_read_timeout(Some(timeout)).unwrap();
@@ -134,7 +143,9 @@ mod tests {
             drop(client);
             drop(first);
 
-            assert!(bind_loopback(address).is_ok());
+            bind_loopback(address).unwrap_or_else(|error| {
+                panic!("Cannot restart {address} after orderly close: {error:?}")
+            });
         }
     }
 
