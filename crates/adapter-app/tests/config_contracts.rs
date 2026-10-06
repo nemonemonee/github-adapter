@@ -542,16 +542,63 @@ fn dacl(path: &Path) -> (u16, Vec<u8>) {
     })
 }
 
+#[cfg(windows)]
+fn initialize_dacl_inheritance(path: &Path) {
+    use std::os::windows::ffi::OsStrExt;
+    use std::ptr;
+    use windows_sys::Win32::Foundation::{ERROR_SUCCESS, LocalFree};
+    use windows_sys::Win32::Security::Authorization::{
+        GetNamedSecurityInfoW, SE_FILE_OBJECT, SetNamedSecurityInfoW,
+    };
+    use windows_sys::Win32::Security::DACL_SECURITY_INFORMATION;
+
+    let path: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+    let mut descriptor = ptr::null_mut();
+    let mut acl = ptr::null_mut();
+    assert_eq!(
+        unsafe {
+            GetNamedSecurityInfoW(
+                path.as_ptr(),
+                SE_FILE_OBJECT,
+                DACL_SECURITY_INFORMATION,
+                ptr::null_mut(),
+                ptr::null_mut(),
+                &mut acl,
+                ptr::null_mut(),
+                &mut descriptor,
+            )
+        },
+        ERROR_SUCCESS
+    );
+    // Hosted runner files can begin with a legacy DACL. Convert this owned
+    // fixture to Windows' current inheritance model before comparing raw bytes.
+    let result = unsafe {
+        SetNamedSecurityInfoW(
+            path.as_ptr(),
+            SE_FILE_OBJECT,
+            DACL_SECURITY_INFORMATION,
+            ptr::null_mut(),
+            ptr::null_mut(),
+            acl,
+            ptr::null_mut(),
+        )
+    };
+    unsafe { LocalFree(descriptor) };
+    assert_eq!(result, ERROR_SUCCESS);
+}
+
 #[test]
 #[cfg(windows)]
 fn native_replace_preserves_existing_dacl_for_configure_update_and_restore() {
     let fixture = Fixture::new();
     fixture.write(Client::Codex, b"model = 'original'\n");
     let path = fixture.paths.codex_config.as_ref().unwrap();
+    initialize_dacl_inheritance(path);
     let (original_control, original_dacl) = dacl(path);
     let (repeated_control, repeated_dacl) = dacl(path);
     assert_eq!(
-        repeated_dacl, original_dacl,
+        (repeated_control, &repeated_dacl),
+        (original_control, &original_dacl),
         "An unchanged fixture DACL returned different raw bytes; control {original_control:#06x} -> {repeated_control:#06x}."
     );
     configure(
@@ -563,7 +610,8 @@ fn native_replace_preserves_existing_dacl_for_configure_update_and_restore() {
     .unwrap();
     let (control, configured_dacl) = dacl(path);
     assert_eq!(
-        configured_dacl, original_dacl,
+        (control, &configured_dacl),
+        (original_control, &original_dacl),
         "ReplaceFileW changed the existing DACL on configure; control {original_control:#06x} -> {control:#06x}."
     );
     configure(
@@ -575,13 +623,15 @@ fn native_replace_preserves_existing_dacl_for_configure_update_and_restore() {
     .unwrap();
     let (control, updated_dacl) = dacl(path);
     assert_eq!(
-        updated_dacl, original_dacl,
+        (control, &updated_dacl),
+        (original_control, &original_dacl),
         "ReplaceFileW changed the existing DACL on update; control {original_control:#06x} -> {control:#06x}."
     );
     restore(&fixture.paths, &[Client::Codex], false).unwrap();
     let (control, restored_dacl) = dacl(path);
     assert_eq!(
-        restored_dacl, original_dacl,
+        (control, &restored_dacl),
+        (original_control, &original_dacl),
         "ReplaceFileW changed the existing DACL on restore; control {original_control:#06x} -> {control:#06x}."
     );
 }

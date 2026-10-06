@@ -15,6 +15,11 @@ pub fn bind_loopback(address: SocketAddr) -> Result<TcpListener> {
     };
     let socket = Socket::new(domain, Type::STREAM, Some(Protocol::TCP))
         .map_err(|error| socket_error("create", error))?;
+    #[cfg(target_os = "macos")]
+    // Closed connections can retain the port in TIME_WAIT after the listener stops.
+    socket
+        .set_reuse_address(true)
+        .map_err(|error| socket_error("configure address reuse", error))?;
     #[cfg(windows)]
     {
         use std::os::windows::io::AsRawSocket;
@@ -101,6 +106,36 @@ mod tests {
                 .status,
             400
         );
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn a_stopped_listener_can_restart_after_orderly_server_first_close() {
+        use std::io::Read;
+        use std::net::{Shutdown, TcpStream};
+        use std::time::Duration;
+
+        let timeout = Duration::from_secs(5);
+        for address in ["127.0.0.1:0", "[::1]:0"] {
+            let first = bind_loopback(address.parse().unwrap()).unwrap();
+            let address = first.local_addr().unwrap();
+            let mut client = TcpStream::connect_timeout(&address, timeout).unwrap();
+            let (mut accepted, _) = first.accept().unwrap();
+            accepted.set_nonblocking(false).unwrap();
+            client.set_read_timeout(Some(timeout)).unwrap();
+            accepted.set_read_timeout(Some(timeout)).unwrap();
+            let mut byte = [0u8; 1];
+
+            accepted.shutdown(Shutdown::Write).unwrap();
+            assert_eq!(client.read(&mut byte).unwrap(), 0);
+            client.shutdown(Shutdown::Write).unwrap();
+            assert_eq!(accepted.read(&mut byte).unwrap(), 0);
+            drop(accepted);
+            drop(client);
+            drop(first);
+
+            assert!(bind_loopback(address).is_ok());
+        }
     }
 
     #[cfg(windows)]
