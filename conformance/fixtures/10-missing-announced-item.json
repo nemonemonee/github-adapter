@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "name": "terminal-cannot-lose-announced-item",
+  "operation": "native_events",
+  "classification": "correct",
+  "reason": "The Python identity-only normalizer currently accepts this contradiction.",
+  "input": {"events": [
+    {"type": "response.output_item.added", "output_index": 0, "item": {"id": "message", "type": "message", "content": []}},
+    {"type": "response.completed", "response": {"id": "response", "status": "completed", "output": []}}
+  ]},
+  "expected_error": {"status": 502}
+}

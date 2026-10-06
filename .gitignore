@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+*.log
+target/
+artifacts/
+.env
+.env.*
+!.env.example
+crates/adapter-app/host-peer-*/
+crates/adapter-app/host-job-*/
+crates/adapter-app/native-cli-contract-*/
+.omc/

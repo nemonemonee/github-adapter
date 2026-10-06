@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "name": "genuine-compaction-envelope",
+  "operation": "compaction_result",
+  "classification": "preserve",
+  "input": {"response": {
+    "id": "opaque+/compaction==",
+    "output": [{"type": "compaction", "encrypted_content": "synthetic-ciphertext"}],
+    "extension": {"retained": true}
+  }},
+  "expected": {
+    "id": "opaque+/compaction==",
+    "object": "response.compaction",
+    "output": [{"type": "compaction", "encrypted_content": "synthetic-ciphertext"}],
+    "extension": {"retained": true}
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "name": "unknown-usage-stays-unknown",
+  "operation": "usage",
+  "classification": "preserve",
+  "input": {"usage": null},
+  "expected": null
+}

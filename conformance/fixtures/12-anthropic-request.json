@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "name": "anthropic-generic-model-selection",
+  "operation": "anthropic_request",
+  "classification": "preserve",
+  "input": {
+    "model": "fixture-native",
+    "request": {
+      "messages": [{"role": "user", "content": "hello"}],
+      "system": [{"type": "text", "text": "follow the fixture"}],
+      "max_tokens": 100,
+      "output_config": {"effort": "high"}
+    }
+  },
+  "expected": {
+    "model": "fixture-native",
+    "input": [{"role": "user", "content": "hello"}],
+    "stream": false,
+    "instructions": "follow the fixture",
+    "max_output_tokens": 100,
+    "reasoning": {"effort": "high"}
+  }
+}

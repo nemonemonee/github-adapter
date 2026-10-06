@@ -1,0 +1,41 @@
+[workspace]
+members = [
+    "crates/adapter-protocol",
+    "crates/adapter-runtime",
+    "crates/adapter-app",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.98"
+publish = false
+license = "MIT"
+repository = "https://github.com/nemonemonee/github-adapter"
+
+[workspace.dependencies]
+adapter-protocol = { path = "crates/adapter-protocol" }
+adapter-runtime = { path = "crates/adapter-runtime" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "raw_value", "preserve_order"] }
+sha2 = "0.10"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "signal", "sync", "io-util", "io-std", "fs"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+axum = "0.8"
+bytes = "1"
+futures-util = "0.3"
+hyper-util = { version = "0.1", features = ["server-auto", "service", "tokio"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["native-tls", "system-proxy", "json", "stream", "form", "http2"] }
+async-stream = "0.3"
+url = "2"
+zstd = "0.13"
+toml_edit = "0.23"
+clap = { version = "4", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "name": "complete-tool-history",
+  "operation": "responses_to_chat",
+  "classification": "preserve",
+  "input": {
+    "request": {
+      "model": "fixture-model",
+      "input": [
+        {"role": "user", "content": "look up"},
+        {"type": "function_call", "call_id": "call_fixture", "name": "lookup", "arguments": "{\"id\":42}"},
+        {"type": "function_call_output", "call_id": "call_fixture", "output": "found"}
+      ],
+      "max_output_tokens": 256,
+      "reasoning": {"effort": "low"}
+    }
+  },
+  "expected": {
+    "model": "fixture-model",
+    "stream": false,
+    "max_completion_tokens": 256,
+    "reasoning_effort": "low",
+    "messages": [
+      {"role": "user", "content": "look up"},
+      {"role": "assistant", "content": null, "tool_calls": [
+        {"id": "call_fixture", "type": "function", "function": {"name": "lookup", "arguments": "{\"id\":42}"}}
+      ]},
+      {"role": "tool", "tool_call_id": "call_fixture", "content": "found"}
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "name": "separate-reasoning-accounting",
+  "operation": "usage",
+  "classification": "preserve",
+  "input": {"usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 6,
+    "total_tokens": 173,
+    "reasoning_tokens": 157,
+    "prompt_tokens_details": {"cached_tokens": 0}
+  }},
+  "expected": {
+    "input_tokens": 10,
+    "output_tokens": 163,
+    "total_tokens": 173,
+    "input_tokens_details": {"cached_tokens": 0},
+    "output_tokens_details": {"reasoning_tokens": 157}
+  }
+}

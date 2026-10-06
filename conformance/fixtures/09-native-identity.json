@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "name": "rotating-native-identities",
+  "operation": "native_events",
+  "classification": "preserve",
+  "input": {"events": [
+    {"type": "response.created", "response": {"id": "response-first", "output": []}},
+    {"type": "response.output_item.added", "output_index": 0, "item": {"id": "item-first", "type": "message", "role": "assistant", "phase": "commentary", "content": []}},
+    {"type": "response.output_text.delta", "output_index": 0, "content_index": 0, "item_id": "item-rotated", "delta": "Repeat. Repeat."},
+    {"type": "response.output_item.done", "output_index": 0, "item": {"id": "item-finalized", "type": "message", "role": "assistant", "phase": "commentary", "content": [{"type": "output_text", "text": "Repeat. Repeat."}]}},
+    {"type": "response.completed", "response": {"id": "response-final", "status": "completed", "output": [{"id": "item-terminal", "type": "message", "role": "assistant", "phase": "commentary", "content": [{"type": "output_text", "text": "Repeat. Repeat."}]}]}}
+  ]},
+  "expected": [
+    {"type": "response.created", "response": {"id": "response-first", "output": []}},
+    {"type": "response.output_item.added", "output_index": 0, "item": {"id": "item-first", "type": "message", "role": "assistant", "phase": "commentary", "content": []}},
+    {"type": "response.output_text.delta", "output_index": 0, "content_index": 0, "item_id": "item-first", "delta": "Repeat. Repeat."},
+    {"type": "response.output_item.done", "output_index": 0, "item": {"id": "item-first", "type": "message", "role": "assistant", "phase": "commentary", "content": [{"type": "output_text", "text": "Repeat. Repeat."}]}},
+    {"type": "response.completed", "response": {"id": "response-first", "status": "completed", "output": [{"id": "item-first", "type": "message", "role": "assistant", "phase": "commentary", "content": [{"type": "output_text", "text": "Repeat. Repeat."}]}]}}
+  ]
+}

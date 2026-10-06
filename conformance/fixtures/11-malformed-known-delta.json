@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "name": "known-delta-fields-are-validated",
+  "operation": "native_events",
+  "classification": "correct",
+  "reason": "A numeric text delta and negative content index must not pass through as valid stream output.",
+  "input": {"events": [
+    {"type": "response.output_item.added", "output_index": 0, "item": {"id": "message", "type": "message", "content": []}},
+    {"type": "response.output_text.delta", "output_index": 0, "content_index": -1, "item_id": "changed", "delta": 123}
+  ]},
+  "expected_error": {"status": 502}
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 256 256">
+<title>GitHub Adapter — original connector mark</title>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M96 44H80C58 44 40 62 40 84V172C40 194 58 212 80 212H96M160 44H176C198 44 216 62 216 84V172C216 194 198 212 176 212H160" stroke="#f7f8fa" stroke-width="42"/>
+<path d="M96 44H80C58 44 40 62 40 84V172C40 194 58 212 80 212H96M160 44H176C198 44 216 62 216 84V172C216 194 198 212 176 212H160" stroke="#202a36" stroke-width="30"/>
+<path d="M84 128H172" stroke="#202a36" stroke-width="42"/>
+<path d="M84 128H172" stroke="#53c9bc" stroke-width="26"/>
+</g></svg>

@@ -1,0 +1,103 @@
+name: Verify candidate
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            architecture: x64
+            target: x86_64-pc-windows-msvc
+          - runner: windows-11-arm
+            architecture: arm64
+            target: aarch64-pc-windows-msvc
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Rust components
+        shell: pwsh
+        run: rustup toolchain install 1.98.1 --profile minimal --component clippy --component rustfmt --target ${{ matrix.target }}
+      - name: Format
+        run: cargo +1.98.1 fmt --all -- --check
+      - name: Rust contracts
+        shell: pwsh
+        run: ./tools/build-windows.ps1 -Action test -Locked
+      - name: Clippy
+        shell: pwsh
+        run: ./tools/build-windows.ps1 -Action clippy -Locked
+      - name: Product docs and licenses
+        shell: pwsh
+        run: |
+          python tools/check-docs.py
+          python tools/update-notices.py --check
+      - name: Windows artwork
+        shell: pwsh
+        run: |
+          ./tools/generate-icon.ps1 -Check
+          ./tools/tests/test-icons.ps1
+      - name: Release binaries
+        shell: pwsh
+        run: ./tools/build-windows.ps1 -Action build -Package adapter-app -Release -StaticRuntime -Locked
+      - name: Installer and archive contracts
+        shell: pwsh
+        run: ./tools/test-native.ps1
+      - name: Prepare candidate
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory artifacts/prepare | Out-Null
+          Copy-Item -LiteralPath target/${{ matrix.target }}/release/github-adapter.exe -Destination artifacts/prepare/
+          Copy-Item -LiteralPath target/${{ matrix.target }}/release/github-adapter-host.exe -Destination artifacts/prepare/
+          ./tools/package-native.ps1 -Architecture ${{ matrix.architecture }} -Source artifacts/prepare/github-adapter.exe -Unsigned
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.architecture }}-candidate
+          path: |
+            artifacts/github-adapter-*-windows-*/*.zip
+            artifacts/github-adapter-*-windows-*/*.sha256
+          if-no-files-found: error
+
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: arm64
+          - runner: macos-15-intel
+            architecture: x64
+    runs-on: ${{ matrix.runner }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '13.0'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Rust components
+        run: rustup toolchain install 1.98.1 --profile minimal --component clippy --component rustfmt
+      - name: Format, native contracts and Clippy
+        run: |
+          cargo fmt --all -- --check
+          cargo test --workspace --locked
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Product docs and licenses
+        run: |
+          python3 tools/check-docs.py
+          python3 tools/update-notices.py --check
+      - name: Release binaries and bundle verification
+        run: |
+          bash -n tools/build-macos.sh tools/package-macos.sh
+          bash tools/build-macos.sh
+          bash tools/package-macos.sh --unsigned
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.architecture }}-candidate
+          path: |
+            artifacts/github-adapter-*-macos-*/*.zip
+            artifacts/github-adapter-*-macos-*/*.sha256
+          if-no-files-found: error

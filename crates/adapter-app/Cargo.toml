@@ -1,0 +1,47 @@
+[package]
+name = "adapter-app"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+default-run = "github-adapter"
+
+[[bin]]
+name = "github-adapter"
+path = "src/main.rs"
+
+[[bin]]
+name = "github-adapter-host"
+path = "src/desktop_main.rs"
+
+[dependencies]
+adapter-protocol.workspace = true
+adapter-runtime.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+sha2.workspace = true
+toml_edit.workspace = true
+clap.workspace = true
+tokio = { workspace = true, features = ["process"] }
+tokio-util.workspace = true
+futures-util.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+socket2 = "0.6.5"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_Security", "Win32_Security_Credentials", "Win32_Storage_FileSystem", "Win32_System_Threading", "Win32_System_Pipes", "Win32_System_Memory", "Win32_System_Console", "Win32_System_Registry", "Win32_UI_HiDpi", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Win32_Graphics_Gdi"] }
+windows = { version = "0.62", features = ["Foundation", "Foundation_Collections", "ApplicationModel", "ApplicationModel_Core", "Management_Deployment", "Win32_System_WinRT", "Win32_UI_Shell", "Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2"
+security-framework = "3"
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSGeometry", "NSString", "objc2-core-foundation"] }
+unicode-normalization = "0.1"

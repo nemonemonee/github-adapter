@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "text-request",
+  "operation": "responses_to_chat",
+  "classification": "preserve",
+  "input": {"request": {"model": "fixture-model", "input": "hello"}, "stream": true},
+  "expected": {
+    "model": "fixture-model",
+    "stream": true,
+    "messages": [{"role": "user", "content": "hello"}],
+    "stream_options": {"include_usage": true}
+  }
+}

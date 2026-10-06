@@ -1,0 +1,10 @@
+*.rs text eol=lf
+*.toml text eol=lf
+Cargo.lock text eol=lf
+assets/github-adapter-dark.svg text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+LICENSE text eol=lf
+THIRD_PARTY_LICENSES.txt text eol=lf

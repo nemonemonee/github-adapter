@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "name": "contradictory-token-totals",
+  "operation": "usage",
+  "classification": "preserve",
+  "input": {"usage": {"prompt_tokens": 10, "completion_tokens": 6, "total_tokens": 999}},
+  "expected_error": {"status": 400}
+}

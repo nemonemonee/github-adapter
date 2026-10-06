@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "reject-unencrypted-summary",
+  "operation": "compaction_result",
+  "classification": "preserve",
+  "input": {"response": {
+    "id": "not-a-compaction",
+    "output": [{"type": "message", "content": "not ciphertext"}]
+  }},
+  "expected_error": {"status": 502}
+}
