@@ -55,7 +55,8 @@ jobs:
           New-Item -ItemType Directory artifacts/prepare | Out-Null
           Copy-Item -LiteralPath target/${{ matrix.target }}/release/github-adapter.exe -Destination artifacts/prepare/
           Copy-Item -LiteralPath target/${{ matrix.target }}/release/github-adapter-host.exe -Destination artifacts/prepare/
-          ./tools/package-native.ps1 -Architecture ${{ matrix.architecture }} -Source artifacts/prepare/github-adapter.exe -Unsigned
+          $candidateSource = (Resolve-Path -LiteralPath artifacts/prepare/github-adapter.exe).Path
+          ./tools/package-native.ps1 -Architecture ${{ matrix.architecture }} -Source $candidateSource -Unsigned
       - uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.architecture }}-candidate
